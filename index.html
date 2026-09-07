@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Undo-First Agent: every AI action starts with a reversible plan." />
+    <title>Undo-First Agent</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Undo-First Agent home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>undo-first</span>
+        </a>
+        <div class="topbar-right">
+          <span class="environment-pill"><span class="status-dot"></span> local sandbox</span>
+          <button class="ghost-button" id="resetDemo" type="button">Reset demo</button>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="hero section-width">
+          <div class="eyebrow"><span class="eyebrow-line"></span> A safety layer for capable agents</div>
+          <h1>No action without<br /><em>an undo plan.</em></h1>
+          <p class="hero-copy">Undo-First Agent turns a vague instruction into a bounded, reversible change. The agent shows what it will touch, how risky it is, and how to put everything back <strong>before</strong> anything happens.</p>
+          <div class="hero-actions">
+            <button class="primary-button" id="startDemo" type="button">Build a safe plan <span>→</span></button>
+            <a class="text-link" href="#how-it-works">See how it works <span>↓</span></a>
+          </div>
+          <div class="hero-proof">
+            <span><i class="proof-icon">↶</i> Reversible by default</span>
+            <span><i class="proof-icon">◈</i> Human approval gate</span>
+            <span><i class="proof-icon">⌁</i> Audit-ready receipt</span>
+          </div>
+        </section>
+
+        <section class="workspace section-width" id="workspace" aria-labelledby="workspace-title">
+          <div class="workspace-heading">
+            <div>
+              <div class="section-kicker">LIVE DEMO / SYNTHETIC DATA</div>
+              <h2 id="workspace-title">A plan you can trust before you run it.</h2>
+            </div>
+            <div class="workspace-id"><span class="pulse"></span> session <code id="sessionId">UFA-LOCAL</code></div>
+          </div>
+
+          <div class="demo-grid">
+            <aside class="control-panel panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-label">01 / REQUEST</div>
+                  <h3>What should the agent do?</h3>
+                </div>
+                <span class="step-badge">PLAN FIRST</span>
+              </div>
+              <label class="field-label" for="scenarioSelect">Choose a scenario</label>
+              <select id="scenarioSelect" class="select-control">
+                <option value="folder">Clean up a shared project folder</option>
+                <option value="crm">Correct a batch of customer records</option>
+                <option value="subscriptions">Audit recent subscriptions</option>
+              </select>
+              <label class="field-label" for="requestText">Natural-language request</label>
+              <textarea id="requestText" class="request-input" rows="4">Clean up the shared project folder and make it easier for the team to find the latest files.</textarea>
+              <div class="request-hint"><span class="hint-icon">✦</span><span>The agent will translate this into explicit, reviewable steps. It cannot execute this text directly.</span></div>
+              <button class="secondary-button full-width" id="generatePlan" type="button">Generate undo-first plan <span>↗</span></button>
+
+              <div class="scope-divider"></div>
+              <div class="panel-label">02 / BOUNDARY</div>
+              <div class="scope-row">
+                <div>
+                  <strong>Destructive actions</strong>
+                  <small>Allow permanent deletion or overwrite</small>
+                </div>
+                <label class="toggle-wrap" aria-label="Allow destructive actions">
+                  <input type="checkbox" id="destructiveToggle" />
+                  <span class="toggle"></span>
+                </label>
+              </div>
+              <div class="scope-row">
+                <div>
+                  <strong>Approval required</strong>
+                  <small>Always ask before execution</small>
+                </div>
+                <span class="locked-state">LOCKED ON <span>⌑</span></span>
+              </div>
+              <div class="scope-note">Least privilege is the default. This demo never touches your real files, accounts, or network.</div>
+            </aside>
+
+            <section class="plan-panel panel" aria-live="polite">
+              <div class="panel-header plan-panel-header">
+                <div>
+                  <div class="panel-label">03 / PROPOSED CHANGE</div>
+                  <h3 id="planTitle">No plan generated yet</h3>
+                </div>
+                <div id="planStatus" class="plan-status idle">WAITING FOR REQUEST</div>
+              </div>
+              <div id="emptyPlan" class="empty-state">
+                <div class="empty-orbit"><span>↶</span></div>
+                <h4>Preview the change before the change.</h4>
+                <p>Describe a task on the left, then ask the agent to produce a reversible plan with a clear rollback path.</p>
+              </div>
+              <div id="planContent" class="hidden">
+                <div class="metric-strip">
+                  <div class="metric-card"><span>UNDO COVERAGE</span><strong id="undoCoverage">—</strong><small id="undoCoverageCaption">—</small></div>
+                  <div class="metric-card"><span>BLAST RADIUS</span><strong id="blastRadius">—</strong><small id="blastRadiusCaption">—</small></div>
+                  <div class="metric-card"><span>DATA TOUCHED</span><strong id="dataTouched">—</strong><small id="dataTouchedCaption">—</small></div>
+                  <div class="metric-card"><span>EXPIRES</span><strong id="planExpiry">—</strong><small>plan validity</small></div>
+                </div>
+
+                <div class="plan-section">
+                  <div class="subsection-heading"><span>Agent proposal</span><span id="proposalRisk" class="risk-tag">LOW RISK</span></div>
+                  <p id="proposalSummary" class="proposal-summary"></p>
+                </div>
+
+                <div class="plan-section">
+                  <div class="subsection-heading"><span>Planned steps</span><span id="stepCount" class="muted-count"></span></div>
+                  <ol id="stepList" class="step-list"></ol>
+                </div>
+
+                <div class="plan-section undo-section">
+                  <div class="subsection-heading"><span>Rollback plan</span><span class="rollback-badge">↶ ONE-CLICK UNDO</span></div>
+                  <div id="rollbackBox" class="rollback-box"></div>
+                </div>
+
+                <div class="approval-card">
+                  <div class="approval-icon">✓</div>
+                  <div class="approval-copy">
+                    <strong>Human approval required</strong>
+                    <span>Review the scope and rollback plan. Approval authorizes only this exact plan.</span>
+                  </div>
+                  <label class="approval-check"><input type="checkbox" id="approvalCheckbox" /><span></span>I reviewed it</label>
+                </div>
+
+                <div class="plan-actions">
+                  <button class="primary-button" id="approveExecute" type="button" disabled>Approve &amp; run demo <span>→</span></button>
+                  <button class="ghost-button" id="editPlan" type="button">Edit request</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section id="executionPanel" class="execution-panel panel hidden" aria-live="polite">
+            <div class="panel-header">
+              <div>
+                <div class="panel-label">04 / EXECUTION RECEIPT</div>
+                <h3 id="executionTitle">Action receipt</h3>
+              </div>
+              <div id="executionStatus" class="plan-status idle">NOT RUN</div>
+            </div>
+            <div class="execution-grid">
+              <div class="state-card">
+                <div class="state-card-header"><span class="state-label">STATE BEFORE</span><span class="state-count" id="beforeCount"></span></div>
+                <div id="beforeState" class="state-list"></div>
+              </div>
+              <div class="transition-arrow">→</div>
+              <div class="state-card after-card">
+                <div class="state-card-header"><span class="state-label">STATE AFTER</span><span class="state-count" id="afterCount"></span></div>
+                <div id="afterState" class="state-list"></div>
+              </div>
+            </div>
+            <div class="receipt-footer">
+              <div><span class="receipt-check">✓</span><span id="receiptMessage">The local demo action completed.</span></div>
+              <div class="receipt-actions"><button class="secondary-button" id="rollbackButton" type="button">↶ Roll back now</button><button class="ghost-button" id="receiptButton" type="button">View audit receipt</button></div>
+            </div>
+          </section>
+
+          <section id="auditPanel" class="audit-panel panel hidden" aria-live="polite">
+            <div class="panel-header">
+              <div>
+                <div class="panel-label">AUDIT PACKET</div>
+                <h3>Decision receipt</h3>
+              </div>
+              <button class="ghost-button" id="copyReceipt" type="button">Copy receipt</button>
+            </div>
+            <pre id="auditReceipt" class="audit-receipt"></pre>
+          </section>
+        </section>
+
+        <section class="how-section section-width" id="how-it-works">
+          <div class="section-kicker">THE TRUST LOOP</div>
+          <h2>Powerful enough to act.<br /><em>Careful enough to undo.</em></h2>
+          <div class="trust-loop">
+            <article class="loop-card active"><span class="loop-number">01</span><span class="loop-icon">⌁</span><h3>Declare</h3><p>Translate intent into a concrete list of proposed changes, data touched, and constraints.</p></article>
+            <div class="loop-connector">→</div>
+            <article class="loop-card"><span class="loop-number">02</span><span class="loop-icon">◌</span><h3>Simulate</h3><p>Show blast radius, risk, and a tested rollback path before a tool call is allowed.</p></article>
+            <div class="loop-connector">→</div>
+            <article class="loop-card"><span class="loop-number">03</span><span class="loop-icon">✓</span><h3>Approve</h3><p>A human approves the exact scope, not a vague promise about what the agent might do.</p></article>
+            <div class="loop-connector">→</div>
+            <article class="loop-card"><span class="loop-number">04</span><span class="loop-icon">↶</span><h3>Recover</h3><p>Execute with a receipt, then undo the action in one click if the outcome is not right.</p></article>
+          </div>
+        </section>
+
+        <section class="principles section-width">
+          <div class="principles-copy"><div class="section-kicker">DESIGNED FOR THE REAL WORLD</div><h2>Trust is a product feature.</h2><p>Undo-First Agent is a portable safety layer for agents operating across files, CRM systems, calendars, subscriptions, and internal tools. It keeps the user in control without turning every task into a manual checklist.</p></div>
+          <div class="principle-list">
+            <div class="principle"><span>↶</span><div><strong>Reversible by default</strong><p>Prefer moves, drafts, snapshots, and soft deletes over irreversible actions.</p></div></div>
+            <div class="principle"><span>⌑</span><div><strong>Bounded authority</strong><p>Approval covers one declared plan with a limited scope and an expiry.</p></div></div>
+            <div class="principle"><span>▤</span><div><strong>Evidence, not vibes</strong><p>Every action produces a receipt that explains what changed and how to recover.</p></div></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer section-width"><span>UNDO-FIRST AGENT / PROTOTYPE</span><span>Built for trustworthy agent workflows · Synthetic data only</span></footer>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

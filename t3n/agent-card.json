@@ -1,0 +1,21 @@
+{
+  "name": "Undo-First Agent",
+  "description": "A trusted action agent that turns vague requests into bounded, approval-gated, reversible plans with an audit receipt.",
+  "url": "https://axodbcm.github.io/undo-first-agent/",
+  "version": "0.1.0",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "skills": [
+    {
+      "id": "undo-first-plan",
+      "name": "Build an undo-first plan",
+      "description": "Inspect scope, simulate blast radius, require approval, and preserve a rollback path."
+    }
+  ],
+  "metadata": {
+    "safetyModel": "explicit-plan-human-approval-tested-rollback",
+    "demoData": "synthetic"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "undo-first-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "t3n:check": "tsx t3n/quickstart.ts",
+    "t3n:inspect": "tsx t3n/inspect.ts",
+    "t3n:register": "powershell -ExecutionPolicy Bypass -File .\\t3n\\register-agent.ps1",
+    "t3n:register:run": "tsx t3n/register-agent.ts"
+  },
+  "dependencies": {
+    "@terminal3/t3n-sdk": "latest"
+  },
+  "devDependencies": {
+    "tsx": "latest"
+  }
+}

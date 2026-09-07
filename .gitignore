@@ -1,0 +1,4 @@
+node_modules/
+.env
+.env.*
+t3n/sandbox-state.json
